@@ -945,6 +945,9 @@ namespace drachtio {
  
             int clients = pCore->startRequests() ;
 
+            //TODO: end newrelic transaction
+            //
+
             //check to make sure we got at least one request out
             if( 0 == clients ) {
                 m_pController->getClientController()->route_api_response( pData->getClientMsgId(), "NOK", "error proxying request to " ) ;

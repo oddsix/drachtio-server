@@ -38,6 +38,18 @@ namespace drachtio {
    
     msg_ref( m_msg ) ; 
   }
+
+#ifdef NEWRELIC
+  PendingRequest_t::PendingRequest_t(msg_t* msg, sip_t* sip, tport_t* tp, boost::shared_ptr<NrTransaction> pNrTransaction ) {
+    DR_LOG(log_debug) << "PendingRequest_t::PendingRequest_t" ;
+    generateUuid( m_transactionId ) ;
+
+    msg_ref( m_msg ) ; 
+    m_nrTransaction = pNrTransaction ;
+  }
+
+#endif
+
   PendingRequest_t::~PendingRequest_t() {
     msg_unref( m_msg ) ;
     DR_LOG(log_debug) << "PendingRequest_t::~PendingRequest_t - unref'ed msg" ;

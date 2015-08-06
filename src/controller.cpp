@@ -76,6 +76,12 @@ namespace drachtio {
 #include "cdr.hpp"
 #include "controller.hpp"
 
+#ifdef NEWRELIC
+#include "newrelic_collector_client.h"
+#include "newrelic_common.h"
+#include "newrelic_transaction.h"
+#endif
+
 /* clone static functions, used to post a message into the main su event loop from the worker client controller thread */
 namespace {
     void my_formatter(logging::record_view const& rec, logging::formatting_ostream& strm) {
@@ -203,6 +209,10 @@ namespace drachtio {
             exit(-1) ;
         }
         this->installConfig() ;
+
+#ifdef NEWRELIC
+        newrelic_register_message_handler(newrelic_message_handler);
+#endif
 
 
     }
@@ -605,6 +615,12 @@ namespace drachtio {
             " does not match an existing call leg"  ;
 
         if( sip->sip_request ) {
+
+            //TODO: start a newrelic transaction 
+#ifdef newrelic
+            shared_ptr<NrTransaction> pNrTransaction = boost::make_shared<NrTransaction>() ;
+#endif
+            //long transaction_id = newrelic_transaction_begin();
 
             if( sip_sanity_check(sip) < 0 ) {
                 DR_LOG(log_error) << "invalid incoming request message; discarding call-id " << sip->sip_call_id->i_id ;

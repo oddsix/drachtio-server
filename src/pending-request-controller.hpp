@@ -38,6 +38,10 @@ THE SOFTWARE.
 #include "drachtio.h"
 #include "client-controller.hpp"
 
+#ifdef NEWRELIC
+#include "nr-transaction.hpp"
+#endif
+
 using namespace std ;
 
 namespace drachtio {
@@ -47,6 +51,9 @@ namespace drachtio {
   class PendingRequest_t {
   public:
     PendingRequest_t(msg_t* msg, sip_t* sip, tport_t* tp );
+#ifdef NEWRELIC
+    PendingRequest_t(msg_t* msg, sip_t* sip, tport_t* tp, boost::shared_ptr<NrTransaction> pNrTransaction );
+#endif
     ~PendingRequest_t() ;
 
     msg_t* getMsg() ;
@@ -55,11 +62,19 @@ namespace drachtio {
     const string& getTransactionId() ;
     tport_t* getTport() ;
 
+#ifdef NEWRELIC
+    boost::shared_ptr<NrTransaction> getNrTransaction() { return m_nrTransaction; }
+#endif
+
   private:
     msg_t*  m_msg ;
     string  m_transactionId ;
     string  m_callId ;
     tport_t* m_tp ;
+
+#ifdef NEWRELIC
+    boost::shared_ptr<NrTransaction> m_nrTransaction ;
+#endif
   } ;
 
 
