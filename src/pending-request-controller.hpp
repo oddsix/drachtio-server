@@ -84,6 +84,9 @@ namespace drachtio {
     ~PendingRequestController() ;
 
     int processNewRequest( msg_t* msg, sip_t* sip, string& transactionId ) ;
+#ifdef NEWRELIC
+    int processNewRequest( msg_t* msg, sip_t* sip, string& transactionId, boost::shared_ptr<NrTransaction> nrTransaction ) ;
+#endif
 
     boost::shared_ptr<PendingRequest_t> findAndRemove( const string& transactionId ) ;
 
@@ -96,8 +99,11 @@ namespace drachtio {
     }
 
   protected:
-
     boost::shared_ptr<PendingRequest_t> add( msg_t* msg, sip_t* sip ) ;
+
+#ifdef NEWRELIC
+    boost::shared_ptr<PendingRequest_t> add( msg_t* msg, sip_t* sip,  boost::shared_ptr<NrTransaction> nrTransaction ) ;
+#endif
 
   private:
     DrachtioController* m_pController ;

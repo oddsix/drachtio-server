@@ -616,12 +616,6 @@ namespace drachtio {
 
         if( sip->sip_request ) {
 
-            //TODO: start a newrelic transaction 
-#ifdef newrelic
-            shared_ptr<NrTransaction> pNrTransaction = boost::make_shared<NrTransaction>() ;
-#endif
-            //long transaction_id = newrelic_transaction_begin();
-
             if( sip_sanity_check(sip) < 0 ) {
                 DR_LOG(log_error) << "invalid incoming request message; discarding call-id " << sip->sip_call_id->i_id ;
                 nta_msg_treply( m_nta, msg, 400, NULL, TAG_END() ) ;
@@ -659,6 +653,9 @@ namespace drachtio {
                                 nta_msg_discard(m_nta, msg) ;  
                                 return -1 ;
                             }
+#ifdef NEWRELIC
+                            shared_ptr<NrTransaction> pNrTransaction = boost::make_shared<NrTransaction>() ;
+#endif
 
                             string transactionId ;
                             int status = m_pPendingRequestController->processNewRequest( msg, sip, transactionId ) ;

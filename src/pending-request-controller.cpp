@@ -99,6 +99,50 @@ namespace drachtio {
 
     return 0 ;
   }
+#ifdef NEWRELIC
+  int PendingRequestController::processNewRequest(  msg_t* msg, sip_t* sip, string& transactionId, boost::shared_ptr<NrTransaction> pNrTransaction ) {
+    assert(sip->sip_request->rq_method != sip_method_invite || NULL == sip->sip_to->a_tag ) ; //new INVITEs only
+
+    client_ptr client = m_pClientController->selectClientForRequestOutsideDialog( sip->sip_request->rq_method_name ) ;
+    if( !client ) {
+      DR_LOG(log_error) << "processNewRequest - No providers available for " << sip->sip_request->rq_method_name  ;
+      generateUuid( transactionId ) ;
+      return 503 ;
+    }
+
+    boost::shared_ptr<PendingRequest_t> p = add( msg, sip, pNrTransaction ) ;
+
+    msg_unref( msg ) ;  //our PendingRequest_t is now the holder of the message
+
+    string encodedMessage ;
+    EncodeStackMessage( sip, encodedMessage ) ;
+    SipMsgData_t meta( msg ) ;
+
+    m_pClientController->addNetTransaction( client, p->getTransactionId() ) ;
+
+    m_pClientController->getIOService().post( boost::bind(&Client::sendSipMessageToClient, client, p->getTransactionId(), 
+        encodedMessage, meta ) ) ;
+    
+    transactionId = p->getTransactionId() ;
+
+    return 0 ;
+  }
+
+  boost::shared_ptr<PendingRequest_t> PendingRequestController::add( msg_t* msg, sip_t* sip, boost::shared_ptr<NrTransaction> pNrTransaction ) {
+    DR_LOG(log_debug) << "PendingRequestController::add " ;
+    tport_t *tp = nta_incoming_transport(m_pController->getAgent(), NULL, msg);
+    tport_unref(tp) ; //because the above increments the refcount and we don't need to
+    DR_LOG(log_debug) << "PendingRequestController::add - tport: " << std::hex << (void*) tp ;
+
+    boost::shared_ptr<PendingRequest_t> p = boost::make_shared<PendingRequest_t>( msg, sip, tp, pNrTransaction ) ;
+    
+    boost::lock_guard<boost::mutex> lock(m_mutex) ;
+    m_mapCallId2Invite.insert( mapCallId2Invite::value_type(p->getCallId(), p) ) ;
+    m_mapTxnId2Invite.insert( mapTxnId2Invite::value_type(p->getTransactionId(), p) ) ;
+
+    return p ;
+  }
+#endif
 
   boost::shared_ptr<PendingRequest_t> PendingRequestController::add( msg_t* msg, sip_t* sip ) {
     DR_LOG(log_debug) << "PendingRequestController::add " ;
