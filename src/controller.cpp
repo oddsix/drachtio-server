@@ -102,6 +102,12 @@ namespace {
     void watchdogTimerHandler(su_root_magic_t *p, su_timer_t *timer, su_timer_arg_t *arg) {
         theOneAndOnlyController->processWatchdogTimer() ;
     }
+#ifdef NEWRELIC
+    void newrelic_status_update(int status) {
+        if (status == NEWRELIC_STATUS_CODE_SHUTDOWN) { // do something when the SDK shuts down
+        } 
+    }
+#endif
 }
 
 
@@ -211,13 +217,18 @@ namespace drachtio {
         this->installConfig() ;
 
 #ifdef NEWRELIC
+        newrelic_register_status_callback(newrelic_status_update);
         newrelic_register_message_handler(newrelic_message_handler);
+        newrelic_init(“my_license_key”, “My Application”, “perl”, “5.5”)
 #endif
 
 
     }
 
     DrachtioController::~DrachtioController() {
+#ifdef NEWRELIC
+        newrelic_request_shutdown(“process terminating”);
+#endif
     }
 
     bool DrachtioController::installConfig() {

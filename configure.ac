@@ -9,16 +9,17 @@ AC_CONFIG_HEADER([config.h])
 
 AM_CONDITIONAL(OSX, false)
 AM_CONDITIONAL(LINUX, false)
-AM_CONDITIONAL(NEWRELIC, true)
 
 AC_CANONICAL_HOST
 
 case $host_os in
 *darwin* | *rhapsody* | *macosx*)
      AM_CONDITIONAL(OSX, true)
+     AM_CONDITIONAL(NEWRELIC, false)
      ;;
 *)
      AM_CONDITIONAL(LINUX, true)
+     AM_CONDITIONAL(NEWRELIC, true)
      ;;
 esac
 
