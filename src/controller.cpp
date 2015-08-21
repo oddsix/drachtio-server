@@ -104,8 +104,7 @@ namespace {
     }
 #ifdef NEWRELIC
     void newrelic_status_update(int status) {
-        if (status == NEWRELIC_STATUS_CODE_SHUTDOWN) { // do something when the SDK shuts down
-        } 
+        theOneAndOnlyController->logNewRelicStatusChange( status ) ;
     }
 #endif
 }
@@ -200,7 +199,7 @@ namespace drachtio {
     }
  
     DrachtioController::DrachtioController( int argc, char* argv[] ) : m_bDaemonize(false), m_bLoggingInitialized(false),
-        m_configFilename(DEFAULT_CONFIG_FILENAME), m_adminPort(0) {
+        m_configFilename(DEFAULT_CONFIG_FILENAME), m_adminPort(0), m_bUsingNewRelic(false) {
         
         if( !parseCmdArgs( argc, argv ) ) {
             usage() ;
@@ -217,9 +216,16 @@ namespace drachtio {
         this->installConfig() ;
 
 #ifdef NEWRELIC
-        newrelic_register_status_callback(newrelic_status_update);
-        newrelic_register_message_handler(newrelic_message_handler);
-        newrelic_init(“my_license_key”, “My Application”, “perl”, “5.5”)
+        string licenseKey ;
+        if( m_Config->getNewRelicLicenseKey(licenseKey) ) {
+            newrelic_register_status_callback(newrelic_status_update);
+            newrelic_register_message_handler(newrelic_message_handler);
+            int rc = newrelic_init(licenseKey.c_str(), "drachtio-server", "c++", "") ;    
+            DR_LOG(log_notice) << "NewRelic initialized; return code: " << rc  ;    
+            if( rc > 0 ) {
+                m_bUsingNewRelic = true ;
+            }    
+        }
 #endif
 
 
@@ -227,8 +233,12 @@ namespace drachtio {
 
     DrachtioController::~DrachtioController() {
 #ifdef NEWRELIC
-        newrelic_request_shutdown(“process terminating”);
+        if( m_bUsingNewRelic) newrelic_request_shutdown("process terminating");
 #endif
+    }
+
+    void DrachtioController::logNewRelicStatusChange(int status) {
+        DR_LOG(log_notice) << "NewRelic status change: " << status ;  
     }
 
     bool DrachtioController::installConfig() {
@@ -664,12 +674,16 @@ namespace drachtio {
                                 nta_msg_discard(m_nta, msg) ;  
                                 return -1 ;
                             }
-#ifdef NEWRELIC
-                            shared_ptr<NrTransaction> pNrTransaction = boost::make_shared<NrTransaction>() ;
-#endif
 
                             string transactionId ;
-                            int status = m_pPendingRequestController->processNewRequest( msg, sip, transactionId ) ;
+                            int status ;
+                            if( m_bUsingNewRelic ) {
+                                shared_ptr<NrTransaction> pNrTransaction = boost::make_shared<NrTransaction>() ;
+                                status = m_pPendingRequestController->processNewRequest( msg, sip, transactionId, pNrTransaction ) ;
+                            }
+                            else {
+                                status = m_pPendingRequestController->processNewRequest( msg, sip, transactionId ) ;                            
+                            }
 
                             //write attempt record
                             if( status >= 0 && sip->sip_request->rq_method == sip_method_invite ) {

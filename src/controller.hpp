@@ -162,6 +162,9 @@ namespace drachtio {
 
                 bool isDaemonized(void) { return m_bDaemonize; }
 
+                bool isUsingNewRelic(void) { return m_bUsingNewRelic; }
+                void logNewRelicStatusChange(int status) ;
+
 	private:
         	DrachtioController() ;
 
@@ -214,6 +217,8 @@ namespace drachtio {
                 sip_record_route_t* m_my_record_route ;
 
         	su_clone_r 	m_clone ;
+
+                bool            m_bUsingNewRelic ;
         } ;
 
 } ;

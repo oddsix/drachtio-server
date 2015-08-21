@@ -56,6 +56,8 @@ namespace drachtio {
          bool getRedisAddress( std::string& address, unsigned int& port ) const ;
 
          bool generateCdrs(void) const ;
+
+         bool getNewRelicLicenseKey( std::string& key ) const ;
        
         void Log() const ;
         

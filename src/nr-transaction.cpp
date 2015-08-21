@@ -34,6 +34,7 @@ namespace drachtio {
     if( NULL != szName ) {
       newrelic_transaction_set_name(m_txnId, szName); 
     }
+    newrelic_transaction_set_type_other(m_txnId);
   }
 
   NrTransaction::~NrTransaction() {

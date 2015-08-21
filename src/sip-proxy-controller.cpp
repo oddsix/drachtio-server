@@ -911,6 +911,13 @@ namespace drachtio {
             m_pController->getClientController()->route_api_response( clientMsgId, "NOK", failMsg) ;
         }
         else {
+#ifdef NEWRELIC
+            boost::shared_ptr<NrTransaction> pNR ;
+            if( theOneAndOnlyController->isUsingNewRelic() ) {
+                pNR = p->getNrTransaction() ;
+                pNR->setName("proxy") ;
+            }
+#endif
             vector<string> vecDestination ;
             pData->getDestinations( vecDestination ) ;
             boost::shared_ptr<ProxyCore> pCore = addProxy( clientMsgId, transactionId, p->getMsg(), p->getSipObject(), p->getTport(), pData->getRecordRoute(), 
@@ -931,6 +938,13 @@ namespace drachtio {
                     msg_ref(msg), //because it will lose a ref in here
                     TAG_END() ) ;
 
+#ifdef NEWRELIC
+                if( pNR) {
+                    pNR->setName("UAS/483") ;
+                    pNR->endTransaction() ;
+                }
+#endif
+
                 Cdr::postCdr( boost::make_shared<CdrStop>( reply, "application", Cdr::call_rejected ) );
 
                 msg_unref(reply) ;
@@ -945,6 +959,12 @@ namespace drachtio {
  
             int clients = pCore->startRequests() ;
 
+#ifdef NEWRELIC
+            if( pNR) {
+                pNR->setName("proxy") ;
+                pNR->endTransaction() ;
+            }
+#endif
             //TODO: end newrelic transaction
             //
 

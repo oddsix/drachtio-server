@@ -19,6 +19,10 @@
         <address>127.0.0.1</address>
     </redis>
 
+    <newrelic>
+        <license>your-license-key</license>
+    </newrelic>
+
     <cdrs>true</cdrs>
             
     <!-- logging configuration -->

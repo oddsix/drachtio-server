@@ -16,9 +16,11 @@ AC_CANONICAL_HOST
 case $host_os in
 *darwin* | *rhapsody* | *macosx*)
      AM_CONDITIONAL(OSX, true)
+     AM_CONDITIONAL(NEWRELIC, true)
      ;;
 *)
      AM_CONDITIONAL(LINUX, true)
+     AM_CONDITIONAL(NEWRELIC, true)
      ;;
 esac
 

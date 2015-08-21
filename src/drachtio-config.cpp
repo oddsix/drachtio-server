@@ -129,6 +129,15 @@ namespace drachtio {
                     }
                 }
 
+                //newrelic config
+                try {
+                    m_newrelicLicenseKey = pt.get<string>("drachtio.newrelic.license") ;
+                } catch( boost::property_tree::ptree_bad_path& e ) {
+                    if( !m_bDaemon ) {
+                       cout << "newrelic integration not enabled" << endl ;
+                    }
+                }
+
                 string cdrs = pt.get<string>("drachtio.cdrs", "") ;
                 transform(cdrs.begin(), cdrs.end(), cdrs.begin(), ::tolower);
                 m_bGenerateCdrs = ( 0 == cdrs.compare("true") || 0 == cdrs.compare("yes") ) ;
@@ -207,7 +216,14 @@ namespace drachtio {
         bool generateCdrs(void) const {
             return m_bGenerateCdrs ;
         }
- 
+        bool getNewRelicLicenseKey( std::string& key ) const {
+            if( m_newrelicLicenseKey.length() > 0 ) {
+                key = m_newrelicLicenseKey ;
+                return true ;
+            }
+            return false ;
+        }
+
     private:
         
         bool getXmlAttribute( ptree::value_type const& v, const string& attrName, string& value ) {
@@ -244,6 +260,7 @@ namespace drachtio {
         unsigned int m_redisPort ;
         bool m_bGenerateCdrs ;
         bool m_bDaemon;
+        string m_newrelicLicenseKey ;
   } ;
     
     /*
@@ -297,6 +314,10 @@ namespace drachtio {
     bool DrachtioConfig::generateCdrs(void) const {
         return m_pimpl->generateCdrs() ;
     }
+    bool DrachtioConfig::getNewRelicLicenseKey( std::string& key ) const {
+        return m_pimpl->getNewRelicLicenseKey( key ) ;
+    }
+
 
  
 }
