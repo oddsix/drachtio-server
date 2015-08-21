@@ -29,3 +29,6 @@ depcomp
 *.lai
 *.la
 *.a
+
+!deps/nr_agent_sdk-v0.16.2.0-beta.x86_64/lib/*.so
+
