@@ -12,7 +12,7 @@ drachtio_LDADD= ${srcdir}/deps/sofia-sip/libsofia-sip-ua/.libs/libsofia-sip-ua.a
 
 if NEWRELIC
 AM_LDFLAGS+= -L${srcdir}/deps/nr_agent_sdk-v0.16.2.0-beta.x86_64/lib
-drachtio_LDADD += -lnewrelic-common -lnewrelic-collector-client
+drachtio_LDADD += -lnewrelic-common -lnewrelic-collector-client -lnewrelic-transaction
 drachtio_SOURCES += src/nr-transaction.cpp
 INCLUDES += -I${srcdir}/deps/nr_agent_sdk-v0.16.2.0-beta.x86_64/include
 endif
