@@ -97,13 +97,15 @@ namespace drachtio {
 
     void Client::read_handler( const boost::system::error_code& ec, std::size_t bytes_transferred ) {
 
+        int nCount = 0 ;
+        DR_LOG(log_debug) << "Client::read_handler entering " ;
         if( ec ) {
-            DR_LOG(log_error) << ec ;
+            DR_LOG(log_error) << "Client::read_handler - ERROR! bouncing client: " << ec ;
             m_controller.leave( shared_from_this() ) ;
             return ;
         }
 
-        //DR_LOG(log_debug) << "Client::read_handler read raw message of " << bytes_transferred << " bytes: " << std::string(m_readBuf.begin(), m_readBuf.begin() + bytes_transferred) << endl ;
+        DR_LOG(log_debug) << "Client::read_handler read " << bytes_transferred << " bytes from client" ;
 
         /* append the data to our in-process buffer */
         m_buffer.insert( m_buffer.end(), m_readBuf.begin(),  m_readBuf.begin() + bytes_transferred ) ;
@@ -128,11 +130,15 @@ namespace drachtio {
         while( m_buffer.size() >= m_nMessageLength && m_nMessageLength > 0 ) {
             string msgResponse ;
             bool bContinue = true ;
+            nCount++ ;
+            if( nCount > 10 ) {
+                DR_LOG(log_debug) << "Client::read_handler found " << nCount << " messages in a single read buffer" ;                
+            }
             try {
                 DR_LOG(log_debug) << "Client::read_handler read: " << std::string( m_buffer.begin(), m_buffer.begin() + m_nMessageLength ) << endl ;
                 bContinue = processClientMessage( string( m_buffer.begin(), m_buffer.begin() + m_nMessageLength), msgResponse ) ;
             } catch( std::runtime_error& err ) {
-                DR_LOG(log_error) << "Error parsing JSON message: " << std::string( m_buffer.begin(), m_buffer.begin() + m_nMessageLength ) << " : " << err.what()  ;
+                DR_LOG(log_error) << "Client::read_handler: Error parsing message, bouncing client: " << std::string( m_buffer.begin(), m_buffer.begin() + m_nMessageLength ) << " : " << err.what()  ;
                 m_controller.leave( shared_from_this() ) ;
                 return ;
             }
@@ -140,10 +146,12 @@ namespace drachtio {
             /* send response if indicated */
             if( !msgResponse.empty() ) {
                 msgResponse.insert(0, boost::lexical_cast<string>(msgResponse.length()) + "#") ;
-                //DR_LOG(log_info) << "Sending response: " << msgResponse << endl ;
+                DR_LOG(log_debug) << "Client::read_handler: Sending response: " ;
                 boost::asio::write( m_sock, boost::asio::buffer( msgResponse ) ) ;
+                DR_LOG(log_debug) << "Client::read_handler: done Sending response: " ;
             }
             if( !bContinue ) {
+                DR_LOG(log_error) << "Client::read_handler: Error parsing message, bouncing client "  ;
                 m_controller.leave( shared_from_this() ) ;
                 return ;
             }
@@ -159,7 +167,7 @@ namespace drachtio {
                     }
                 }
                 catch( std::runtime_error& err ) {
-                    DR_LOG(log_error) << "Client::read_handler client sent invalid message -- JSON message length not specified properly"  ;                     
+                    DR_LOG(log_error) << "Client::read_handler client sent invalid message -- message length not specified properly; bouncing client"  ;                     
                     m_controller.leave( shared_from_this() ) ;               
                     return ;
                 }
@@ -169,6 +177,7 @@ namespace drachtio {
                 m_nMessageLength = 0 ;
             }
         }
+        DR_LOG(log_debug) << "Client::read_handler calling async_read_some and then exiting " ;
 
 read_again:
         m_sock.async_read_some(boost::asio::buffer(m_readBuf),
@@ -309,6 +318,8 @@ read_again:
         string strUuid, s ;
         generateUuid( strUuid ) ;
         meta.toMessageFormat(s) ;
+
+        DR_LOG(log_debug) << "Client::sendSipMessageToClient sending sip message to client " ;
 
         send(strUuid + "|sip|" + s + "|" + transactionId + "|" + CRLF + rawSipMsg) ;
     }
